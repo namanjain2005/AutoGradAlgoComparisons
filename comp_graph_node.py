@@ -1,5 +1,9 @@
+import random
+
 class ComputationGraphNode:
     def __init__(self,data,_children=(),_op = '',label = ''):
+        if data is None: # NOTE assumes it to be weight 
+            data = random.uniform(-1.0, 1.0)
         self.data = data
         self.grad = 0.0
         self._backward = lambda : None
@@ -8,7 +12,7 @@ class ComputationGraphNode:
         self.label = label
     
     def __add__(self, other):
-        out = ComputationGraphNode(self.data + other.data,(self, other),'+')
+        out = ComputationGraphNode(self.data + other.data,(self, other),'+',f"{self.label} + {other.label}")
         def _backward(): 
             # notice this helps to have reference during call without passing them
             self.grad += 1.0*out.grad # as d(out) / d(self) = 1.0  
@@ -16,9 +20,17 @@ class ComputationGraphNode:
             # it just follows chain rule     
         out._backward = _backward
         return out
+    
+    def __sub__(self, other):
+        out = ComputationGraphNode(self.data - other.data,(self, other),'-',f"{self.label} - {other.label}")
+        def _backward(): 
+            self.grad += 1.0*out.grad 
+            other.grad += 1.0*out.grad    
+        out._backward = _backward
+        return out
 
     def __mul__(self, other):
-        out = ComputationGraphNode(self.data * other.data,(self, other),'*')
+        out = ComputationGraphNode(self.data * other.data,(self, other),'*',f"{self.label} * {other.label}")
         def _backward():
             self.grad += other.data*out.grad # as d(out) / d(self) = other.data
             other.grad += self.data*out.grad
@@ -36,7 +48,7 @@ class ComputationGraphNode:
                 topo.append(node)
             return
         build_topo(self)
-
+        self.grad = 1
         for n in reversed(topo):
             n._backward()
 
