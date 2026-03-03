@@ -25,14 +25,21 @@ class ComputationGraphNode:
         out._backward = _backward
         return out
     
-    def backward(self):
-        queue:list[ComputationGraphNode] = [self]
-        while len(queue):
-            start = queue[0]
-            start._backward()
-            queue.pop(0)
-            for prev in start._prev:
-                queue.append(prev)    
+    def dfs_topo_backward(self):
+        topo :list[ComputationGraphNode] = []
+        visited = set()
+        def build_topo(node):
+            if node not in visited:
+                visited.add(node)
+                for prev in node._prev:
+                    build_topo(prev)
+                topo.append(node)
+            return
+        build_topo(self)
+
+        for n in reversed(topo):
+            n._backward()
+
         return
     
     def __repr__(self):
