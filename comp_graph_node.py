@@ -2,7 +2,7 @@ import random
 from collections import deque
 
 class ComputationGraphNode:
-    def __init__(self,data,_children=(),_op = '',label = '',is_param = False):
+    def __init__(self,data,_children=(),_op = '',label = '',requires_grad = False):
         if data is None: # NOTE assumes it to be weight 
             data = random.uniform(-1.0, 1.0)
         self.data = data
@@ -11,7 +11,7 @@ class ComputationGraphNode:
         self._prev = set(_children)
         self._op = _op
         self.label = label
-        self.is_param = is_param
+        self.requires_grad = requires_grad
     
     def __add__(self, other):
         out = ComputationGraphNode(self.data + other.data,(self, other),'+',f"{self.label} + {other.label}")
@@ -27,7 +27,7 @@ class ComputationGraphNode:
         out = ComputationGraphNode(self.data - other.data,(self, other),'-',f"{self.label} - {other.label}")
         def _backward(): 
             self.grad += 1.0*out.grad 
-            other.grad += 1.0*out.grad    
+            other.grad += -1.0*out.grad    
         out._backward = _backward
         return out
 
@@ -64,7 +64,7 @@ class ComputationGraphNode:
             node = que.popleft()
             if node in visited:
                 continue
-            if node.is_param:
+            if node.requires_grad:
                 params.append(node)
             visited.add(node)
             for prev in node._prev:
